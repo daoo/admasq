@@ -1,0 +1,9 @@
+[Unit]
+Description=Update admasq blocklist
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/admasq --ip %I --input /etc/admasq/sources.list --output /var/lib/admasq/admasq.conf --whitelist /etc/admasq/whitelist.list
+ExecStartPost=/usr/bin/systemctl restart dnsmasq.service
