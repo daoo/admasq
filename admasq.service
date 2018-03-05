@@ -1,0 +1,9 @@
+[Unit]
+Description=Update admasq blocklist
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec admasq /admasq/admasq --ip 127.0.0.1 --input /data/sources --output /data/admasq.conf --whitelist /data/whitelist
+ExecStartPost=/usr/bin/docker restart admasq
