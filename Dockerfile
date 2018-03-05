@@ -1,8 +1,8 @@
 FROM alpine:edge
-RUN apk --no-cache add dnsmasq python3
-RUN easy_install-3.6 pip
-RUN pip install --upgrade pip
-RUN pip install requests
+RUN apk --no-cache add dnsmasq python3 && \
+  easy_install-3.6 pip && \
+  pip install --upgrade pip && \
+  pip install requests
 EXPOSE 53/udp
 
 ADD dnsmasq.conf /etc/dnsmasq.conf
