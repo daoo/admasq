@@ -13,4 +13,4 @@ ADD whitelist /data
 RUN /admasq/admasq --ip 127.0.0.1 --input /data/sources --output /data/admasq.conf --whitelist /data/whitelist
 VOLUME /data
 
-ENTRYPOINT ["dnsmasq", "-k", "--log-facility=-"]
+ENTRYPOINT ["dnsmasq", "-k", "--log-facility=/dev/stdout"]
