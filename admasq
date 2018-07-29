@@ -7,38 +7,28 @@ import sys
 
 def filter_lines(lines):
     for line in lines:
-        str = line.strip()
-        if str and not str.startswith('#'):
-            yield str
+        stripped = line.strip()
+        if stripped and not stripped.startswith('#'):
+            yield stripped
+
+
+def read_filtered(path):
+    with open(path, 'r') as file:
+        return filter_lines(file.readlines())
 
 
 def download_domains(url):
-    for line in filter_lines(requests.get(url).text.splitlines()):
-        yield line.split()[-1]
+    with requests.get(url) as response:
+        for line in filter_lines(response.text.splitlines()):
+            yield line.split()[-1]
 
 
 def make_dnsmasq(ip, domains):
-    return ''.join('address="/{}/{}"\n'.format(domain, ip) for domain in domains)
+    for domain in domains:
+        yield 'address="/{}/{}"\n'.format(domain, ip)
 
 
-parser = argparse.ArgumentParser(prog='admasq', description='Build dnsmasq ad-blocking config.')
-parser.add_argument('--ip', default='127.0.0.1', help='ip address which requests are redirect to')
-parser.add_argument('--output', '-o', help='output config file', required=True)
-parser.add_argument('--input', '-i', help='input source list', required=True)
-parser.add_argument('--whitelist', help='whitelist file')
-
-opts = parser.parse_args(sys.argv[1:])
-
-source_urls = None
-with open(opts.input, 'r') as inputfile:
-    source_urls = filter_lines(inputfile.readlines())
-
-whitelist = set()
-if opts.whitelist:
-    with open(opts.whitelist, 'r') as whitelistfile:
-        whitelist = set(filter_lines(whitelistfile.readlines()))
-
-with open(opts.output, 'w') as outputfile:
+def combine_sources(source_urls, whitelist):
     result = set()
     for url in source_urls:
         sys.stdout.write('Downloading "{}": '.format(url))
@@ -47,5 +37,30 @@ with open(opts.output, 'w') as outputfile:
         sys.stdout.write('used {}/{}\n'.format(len(filtered), len(domains)))
         result = result | domains
     sys.stdout.write('Total count: {}\n'.format(len(result)))
+    return result
 
-    outputfile.write(''.join(make_dnsmasq(opts.ip, sorted(result))))
+
+parser = argparse.ArgumentParser(
+    prog='admasq',
+    description='Build dnsmasq ad-blocking config.')
+parser.add_argument('--ip',
+                    default='127.0.0.1',
+                    help='ip address which requests are redirect to')
+parser.add_argument('--output',
+                    '-o',
+                    help='output config file',
+                    required=True)
+parser.add_argument('--input',
+                    '-i',
+                    help='input source list',
+                    required=True)
+parser.add_argument('--whitelist',
+                    help='whitelist file')
+
+opts = parser.parse_args(sys.argv[1:])
+
+source_urls = read_filtered(opts.input)
+whitelist = set(read_filtered(opts.whitelist)) if opts.whitelist else set()
+result = combine_sources(source_urls, whitelist)
+with open(opts.output, 'w') as file:
+    file.writelines(make_dnsmasq(opts.ip, sorted(result)))
