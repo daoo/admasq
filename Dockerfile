@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:latest
 RUN apk --no-cache add dnsmasq python3 && pip3 install requests
 EXPOSE 53/udp
 
